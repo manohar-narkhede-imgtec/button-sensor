@@ -109,4 +109,10 @@
 
 #define BOOTSTRAP_IPv6_ADDR            "2001:1418:100::1"
 
+/* Enable button press simulation */
+/*
+   #define BUTTON_PRESS_SIMULATION
+   #define BUTTON_PRESS_PERIOD 5
+ */
+
 #endif /* __PROJECT_LWM2M_CONF_H__ */

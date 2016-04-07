@@ -145,7 +145,12 @@ Lwm2mContextType * Lwm2mClient_Start()
 }
 
 PROCESS(lwm2m_client, "LwM2M Client");
+#ifndef BUTTON_PRESS_SIMULATION
 AUTOSTART_PROCESSES(&lwm2m_client);
+#else
+PROCESS(button_press_simulator, "Button Press Simulator");
+AUTOSTART_PROCESSES(&lwm2m_client, &button_press_simulator);
+#endif
 
 PROCESS_THREAD(lwm2m_client, ev, data)
 {
@@ -197,4 +202,26 @@ PROCESS_THREAD(lwm2m_client, ev, data)
 
 	PROCESS_END();
 }
+
+/*---------------------------------------------------------------------------*/
+#ifdef BUTTON_PRESS_SIMULATION
+/**
+ * @brief Simulate button presses periodically (required for automated testing).
+ */
+PROCESS_THREAD(button_press_simulator, ev, data)
+{
+  PROCESS_BEGIN();
+  static struct etimer button_timer;
+  int wait_time = BUTTON_PRESS_PERIOD * CLOCK_SECOND;
+  etimer_set(&button_timer, wait_time);
+  while(1) {
+    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&button_timer));
+    process_post(PROCESS_BROADCAST, sensors_event, (void *)&button_sensor);
+    etimer_reset(&button_timer);
+  }
+  PROCESS_END();
+}
+#endif
+
+/*---------------------------------------------------------------------------*/
 //! \}
