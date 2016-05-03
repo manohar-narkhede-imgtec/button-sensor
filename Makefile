@@ -6,11 +6,9 @@ CONTIKI=../../constrained-os/contiki
 CONTIKI_WITH_IPV6 = 1
 CONTIKI_WITH_RPL = 0
 
-CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\" -DVERSION='$(VERSION)'
+CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\" -DVERSION='\"$(VERSION)\"'
 CFLAGS += -Wall -Wno-pointer-sign -DLWM2M_CLIENT
-CFLAGS += -I$(LWM2M_DIR)/core/src/common
-CFLAGS += -I$(LWM2M_DIR)/core/src/client
-CFLAGS += -I$(LWM2M_DIR)/core/src
+CFLAGS += -I$(LWM2M_DIR)/api/include
 
 ifneq (,$(filter  $(TARGET),seedeye mikro-e))
   CFLAGS += -fno-short-double
