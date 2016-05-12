@@ -46,19 +46,14 @@
 #include "lib/sensors.h"
 #include "button-sensor.h"
 
-#include "lwm2m_core.h"
-#include "lwm2m_object_store.h"
-#include "coap_abstraction.h"
-#include "client/lwm2m_bootstrap.h"
-#include "client/lwm2m_registration.h"
-#include "client/lwm2m_device_object.h"
-#include "client/lwm2m_security_object.h"
-#include "client/lwm2m_server_object.h"
+
+#include "awa/static.h"
+
 
 #include "lwm2m-client-flow-object.h"
 #include "lwm2m-client-flow-access-object.h"
 #include "lwm2m-client-ipso-digital-input.h"
-
+#include "lwm2m-client-device-object.h"
 /***************************************************************************************************
  * Definitions
  **************************************************************************************************/
@@ -108,40 +103,24 @@ Options options =
  **************************************************************************************************/
 
 
-void ConstructObjectTree(Lwm2mContextType * context)
+void ConstructObjectTree(AwaStaticClient *client)
 {
-	Lwm2m_Debug("Construct object tree\n");
-
-	Lwm2m_RegisterSecurityObject(context);
-	if (options.BootStrap != NULL)
-	{
-		Lwm2m_PopulateSecurityObject(context, options.BootStrap);
-	}
-	Lwm2m_RegisterServerObject(context);
-	Lwm2m_RegisterDeviceObject(context);
-
-	Lwm2m_RegisterFlowObject(context);
-	Lwm2m_RegisterFlowAccessObject(context);
-
-	DigitalInput_RegisterDigitalInputObject(context);
-	DigitalInput_AddDigitialInput(context, 0);
-	DigitalInput_AddDigitialInput(context, 1);
+	DefineDeviceObject(client);
+	DefineFlowObject(client);
+	DefineFlowAccessObject(client);
+	DefineDigitalInputObject(client);
 }
 
-Lwm2mContextType * Lwm2mClient_Start()
+void AwaStaticClient_Start(AwaStaticClient *client)
 {
-	Lwm2m_SetOutput(stdout);
-	Lwm2m_SetLogLevel((options.Verbose) ? DebugLevel_Debug : DebugLevel_Info);
-	Lwm2m_PrintBanner();
-	Lwm2m_Info("LWM2M client - CoAP port %d\n", options.CoapPort);
-	Lwm2m_Info("LWM2M client - IPC port %d\n", options.IpcPort);
-
-	CoapInfo * coap = coap_Init("0.0.0.0", options.CoapPort,
-		(options.Verbose) ? DebugLevel_Debug : DebugLevel_Info);
-	Lwm2mContextType * context = Lwm2mCore_Init(coap, options.EndPointName);
-	ConstructObjectTree(context);
-
-	return context;
+	AwaStaticClient_SetLogLevel((options.Verbose) ? AwaLogLevel_Debug : AwaLogLevel_Warning);
+	printf("LWM2M client - CoAP port %d\n", options.CoapPort);
+	printf("LWM2M client - IPC port %d\n", options.IpcPort);
+    AwaStaticClient_SetEndPointName(client, options.EndPointName);
+    AwaStaticClient_SetCoAPListenAddressPort(client, "0.0.0.0", options.CoapPort);
+    AwaStaticClient_SetBootstrapServerURI(client, options.BootStrap);
+	AwaStaticClient_Init(client);
+	ConstructObjectTree(client);
 }
 
 PROCESS(lwm2m_client, "LwM2M Client");
@@ -158,20 +137,20 @@ PROCESS_THREAD(lwm2m_client, ev, data)
 
 	PROCESS_PAUSE();
 
-	Lwm2m_Info("Starting LWM2M Client for lwm2m-client-button-sensor\n");
+	printf("Starting LWM2M Client for lwm2m-client-button-sensor\n");
 
 #ifdef RF_CHANNEL
-	Lwm2m_Info("RF channel: %u\n", RF_CHANNEL);
+	printf("RF channel: %u\n", RF_CHANNEL);
 #endif
 #ifdef IEEE802154_PANID
-	Lwm2m_Info("PAN ID: 0x%04X\n", IEEE802154_PANID);
+	printf("PAN ID: 0x%04X\n", IEEE802154_PANID);
 #endif
 
-	Lwm2m_Info("uIP buffer: %u\n", UIP_BUFSIZE);
-	Lwm2m_Info("LL header: %u\n", UIP_LLH_LEN);
-	Lwm2m_Info("IP+UDP header: %u\n", UIP_IPUDPH_LEN);
+	printf("uIP buffer: %u\n", UIP_BUFSIZE);
+	printf("LL header: %u\n", UIP_LLH_LEN);
+	printf("IP+UDP header: %u\n", UIP_IPUDPH_LEN);
 #ifdef REST_MAX_CHUNK_SIZE
-	Lwm2m_Info("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
+	printf("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
 #endif
 
 	uip_ipaddr_t ipaddr;
@@ -180,23 +159,24 @@ PROCESS_THREAD(lwm2m_client, ev, data)
 		BOOTSTRAP_IPv6_ADDR8);
 	uip_ds6_defrt_add(&ipaddr, 0);
 
-	static Lwm2mContextType * context;
+    static AwaStaticClient *client;
+    client = AwaStaticClient_New();
+    AwaStaticClient_Start(client);
 
-	context = Lwm2mClient_Start();
 
 	/* Define application-specific events here. */
 	while(1)
 	{
 		static struct etimer et;
 		static int WaitTime;
-		WaitTime = Lwm2mCore_Process(context);
+		WaitTime = AwaStaticClient_Process(client);
 		etimer_set(&et, (WaitTime * CLOCK_SECOND) / 1000);
 		PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et) || (ev == sensors_event));
 
 		if (data == &button_sensor)
 		{
-			Lwm2m_Info("Button press event received\n");
-			DigitalInput_IncrementCounter(context, 0);
+			printf("Button press event received\n");
+			DigitalInput_IncrementCounter(client, 0);
 		}
 	}
 
