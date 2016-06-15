@@ -50,8 +50,11 @@
 /* Disabling RDC and CSMA for demo purposes. Core updates often
    require more memory. */
 /* For projects, optimize memory and enable RDC and CSMA again. */
-#define NETSTACK_CONF_RDC              nullrdc_driver
-
+/* Depending upon __USE_CC2520__ or __USE_CA8210__,
+   this is defined as nullrdc_driver or nullrdc_noframer_driver ,
+   so commenting out from here.
+   #define NETSTACK_CONF_RDC              nullrdc_driver
+*/
 /* Disabling TCP on CoAP nodes. */
 #define UIP_CONF_TCP                   0
 
