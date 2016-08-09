@@ -171,7 +171,7 @@ PROCESS_THREAD(lwm2m_client, ev, data)
 		static int WaitTime;
 		WaitTime = AwaStaticClient_Process(client);
 		etimer_set(&et, (WaitTime * CLOCK_SECOND) / 1000);
-		PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et) || (ev == sensors_event));
+		PROCESS_YIELD();
 
 		if (data == &button_sensor)
 		{

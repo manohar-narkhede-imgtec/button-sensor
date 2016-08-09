@@ -9,14 +9,14 @@ CONTIKI_WITH_RPL = 0
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\" -DVERSION='\"$(VERSION)\"'
 CFLAGS += -Wall -Wno-pointer-sign -DLWM2M_CLIENT
 CFLAGS += -I$(LWM2M_DIR)/api/include
+CFLAGS += -I$(LWM2M_DIR)/core/src/erbium/
 
 ifneq (,$(filter  $(TARGET),seedeye mikro-e))
   CFLAGS += -fno-short-double
   LDFLAGS += -Wl,--defsym,_min_heap_size=64000
 endif
 
-APPS += er-coap
-APPS += rest-engine
+APPS += erbium
 APPS += client
 APPS += common
 APPS += jsmn
